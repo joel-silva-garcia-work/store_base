@@ -7,9 +7,9 @@ export class Producto extends BasicInformationEntity {
   @Column()
   photo: string;
 
-  @Column({type: 'string'})
+  @Column()
   codigo: string;
-  
+
   @Column({ type: 'jsonb' })
   caracteristicas: Record<string, any>;
 
