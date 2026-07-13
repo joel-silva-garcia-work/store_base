@@ -18,33 +18,38 @@ import { LoginDto } from './dto/login.dto';
 import { JwtGuard } from './guard';
 import { CreateUserDto } from '../user/dto';
 import { User } from '../user/entities/user.entity';
-import { AuthResponseDto } from './dto/auth-response.dto';
-// import { GetUserAdmin } from './decorator';
-// import { JwtGuard } from './guard';
-// import { User } from '../user/entities/user.entity';
+import { ReturnDto } from 'src/common/base/dto';
+import { CodeEnum } from 'src/common/enum/code.enum';
+import { MessageCodes } from 'src/common/enum/messageCodes.enum';
+import { KindTokenEnum } from 'src/common/enum/kind.token.enum';
+
 
 @ApiTags('Authentication')
 @Controller('autenticacion')
 export class AuthController {
-  constructor(private authSetvice: AuthService) {}
+  private returnDto: ReturnDto;
+
+  constructor(private authService: AuthService) {
+      this.returnDto = new ReturnDto();
+  }
 
   @HttpCode(HttpStatus.OK)
   @Post('signup')
   signup(@Body() dto: CreateUserDto) {
-    return this.authSetvice.signup(dto);
+    return this.authService.signup(dto);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('signup-admin')
   signupAdmin(@Body() dto: CreateUserDto) {
-    return this.authSetvice.signupAdmin(dto);
+    return this.authService.signupAdmin(dto);
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('login')
+  @Post('sigin')
   @ApiOperation({ summary: 'Autentica el usuario' })
   signin(@Body() dto: AuthDto) {
-    return this.authSetvice.login(dto);
+    return this.authService.login(dto);
   }
 
   
@@ -55,7 +60,7 @@ export class AuthController {
   signOut(@GetUser() user: User) {
     const dto = new LoginDto
     dto.username = user.username
-    return this.authSetvice.logOut(dto);
+    return this.authService.logOut(dto);
   }
 
 
@@ -63,7 +68,7 @@ export class AuthController {
   @Post('is-token-expired')
   @ApiOperation({ summary: 'Valida el token' })
   isTokenExpired(@Body() dto: TokenDto) {
-    return this.authSetvice.isTokenExpired(dto);
+    return this.authService.isTokenExpired(dto);
   }
 
   @UseGuards(JwtGuard)
@@ -73,7 +78,152 @@ export class AuthController {
   loggedAdmin(
   @Body() dto: LogOutDto,
   @GetUserAdmin() user: User) {
-    return this.authSetvice.loggedOut(dto);
+    return this.authService.loggedOut(dto);
   }
 
+   @Post('login')
+  async login(@Body() req):Promise<ReturnDto> {
+    if (!req || Object.keys(req).length === 0) {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.BAD_REQUEST;
+      this.returnDto.returnMessageCode = MessageCodes.BAD_REQUEST;
+      this.returnDto.data = [];
+      return this.returnDto;
+    }
+    const accessPayload = {
+      tokenKind: KindTokenEnum.ACCESS_TOKEN,
+      ...req.customData, // Permite datos personalizados en el payload
+    };
+    const refreshPayload = {
+      tokenKind: KindTokenEnum.REFRESH_TOKEN,
+      ...req.customData, // Permite datos personalizados en el payload
+    };
+    const accessToken = this.authService.generateAccessToken(accessPayload);
+    const refreshToken = this.authService.generateRefreshToken(refreshPayload);
+    this.returnDto.isSuccess = true;
+    this.returnDto.requestCode = CodeEnum.OK;
+    this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
+    this.returnDto.data = {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    return this.returnDto;
+  }
+
+  @Post('refresh')
+  async refresh(@Body() body: { refresh_token: string }):Promise<ReturnDto> {
+    const { refresh_token } = body;
+    const result = this.authService.verifyRefreshToken(refresh_token);
+
+    if (result.valid) {
+      const { iat, exp, ...decodedWithoutIatExp } = result.decoded; // Eliminar iat y exp      
+      const newAccessToken = this.authService.generateAccessToken(decodedWithoutIatExp);
+      this.returnDto.isSuccess = true;
+      this.returnDto.requestCode = CodeEnum.OK;
+      this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
+      this.returnDto.data = {
+        access_token: newAccessToken,
+      };
+    } else if (result.expired) {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+      this.returnDto.returnMessageCode = MessageCodes.EXPIRED;
+    } else {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+      this.returnDto.returnMessageCode = MessageCodes.INVALID_TOKEN_REFRESH;
+
+    }
+    return this.returnDto;
+  }
+
+    @Post('verify-access-token')
+  async verifyAccess(@Body() body: { access_token: string; refresh_token: string }):Promise<ReturnDto> {
+    this.returnDto.data = [];
+    const { access_token, refresh_token } = body;
+
+    // Primero verificamos el token de refresh
+    const refreshResult = this.authService.verifyRefreshToken(refresh_token);
+
+    if (!refreshResult.valid) {
+      if (refreshResult.expired) {
+        this.returnDto.isSuccess = false;
+        this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+        this.returnDto.returnMessageCode = MessageCodes.REFRESH_EXPIRED;
+      } else {
+        this.returnDto.isSuccess = false;
+        this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+        this.returnDto.returnMessageCode = MessageCodes.INVALID_TOKEN_REFRESH;
+      }
+      return this.returnDto;
+    }
+
+    // Si el refresh token es válido, verificamos el access token
+    const accessResult = this.authService.verifyAccessToken(access_token);
+
+    if (accessResult.valid) {
+      this.returnDto.isSuccess = true;
+      this.returnDto.requestCode = CodeEnum.OK;
+      this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
+    } else if (accessResult.expired) {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+      this.returnDto.returnMessageCode = MessageCodes.ACCESS_EXPIRED; 
+      return this.returnDto;
+    } else {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+      this.returnDto.returnMessageCode = MessageCodes.INVALID_TOKEN_ACCESS;
+      return this.returnDto;
+    }
+    return this.returnDto;
+
+  }
+
+  @Post('verify-refresh')
+  async verifyRefresh(@Body() body: { refresh_token: string }):Promise<ReturnDto> {
+    const result = this.authService.verifyRefreshToken(body.refresh_token);
+
+    if (result.valid) {
+      this.returnDto.isSuccess = true;
+      this.returnDto.requestCode = CodeEnum.OK;
+      this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
+      this.returnDto.data = [];
+
+    } else if (result.expired) {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+      this.returnDto.returnMessageCode = MessageCodes.EXPIRED;
+
+    } else {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+      this.returnDto.returnMessageCode = MessageCodes.UNAUTHORIZED;
+    }
+    return this.returnDto;
+  }
+
+  @Post('payload')
+  async payload(@Body() body: { access_token: string }):Promise<ReturnDto> {
+    const result = this.authService.verifyAccessToken(body.access_token);
+
+    if (result.valid) {
+      this.returnDto.isSuccess = true;
+      this.returnDto.requestCode = CodeEnum.OK;
+      this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
+      this.returnDto.data = result.decoded;
+
+    } else if (result.expired) {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+      this.returnDto.returnMessageCode = MessageCodes.EXPIRED;
+
+    } else {
+      this.returnDto.isSuccess = false;
+      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
+      this.returnDto.returnMessageCode = MessageCodes.UNAUTHORIZED;
+
+    }
+    return this.returnDto;
+  }
 }

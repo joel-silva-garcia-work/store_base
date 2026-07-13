@@ -34,8 +34,8 @@ export class AuthService {
     private roleRepository: Repository<Rol>,
     private jwt: JwtService,
     private config: ConfigService,
-    // @InjectModel('Parking') private readonly ModelParking: Model<Parking>,
-  ) {}
+    private readonly jwtService: JwtService) 
+  {}
 
   async login(dto: LoginDto) {
     // find the user by username
@@ -58,11 +58,9 @@ export class AuthService {
     const role = await this.roleRepository.findOne({
       where: { id: '792e024b-f781-4f39-ba6a-2445fc1db712' },
     });
-    console.log(role);
-    console.log(user.role);
+
 
     if (user.role.id == role.id) { 
-      console.log('es el mismo');
       user.isLogged = false;
     }
     if (user.isLogged) {
@@ -270,6 +268,52 @@ export class AuthService {
     await this.userRepository.save(user);
     // return the save user token
     return true;
+  }
+
+
+  // other part
+   generateAccessToken(customPayload: any) {
+    return this.jwtService.sign(customPayload, { expiresIn: '3m' });
+  }
+
+  generateRefreshToken(customPayload: any) {
+    return this.jwtService.sign(customPayload, { expiresIn: '60m' }); // Token de refresh con expiración diferente
+  }
+
+    // Método para verificar el token de refresh
+  verifyRefreshToken(refreshToken: string) {
+    const { valid, decoded } = this.verifyToken(refreshToken);
+    if (valid) {
+      const tokenKind = decoded.tokenKind;
+      if (tokenKind === 'refresh_token') {
+        return { valid: true, decoded , tokenKind: false }; // Token de refresh válido
+      }
+      return { valid: false, expired: false, tokenKind: false }; // Token de refesh inválido
+    }
+    return { valid: false, expired: false, tokenKind: false }; // Token de refesh inválido
+  }
+
+    // Método para verificar el token de acceso
+  private verifyToken(token: string) {
+    try {
+      const decoded = this.jwtService.verify(token);
+      return { valid: true, decoded };
+    } catch (error) {
+      return { valid: false, expired: false }; // Token inválido
+    }
+  }
+
+  // Método para verificar el token de acceso
+  verifyAccessToken(accessToken: string) {
+    const { valid, decoded } = this.verifyToken(accessToken);
+    if (valid) {
+      const tokenKind = decoded.tokenKind;
+      if (tokenKind === 'access_token') {
+        return { valid: true, decoded , tokenKind: false }; // Token de access válido
+      }
+      return { valid: false, expired: false, tokenKind: false }; // Token de access inválido
+    }
+    return { valid: false, expired: false, tokenKind: false }; // Token de access inválido
   }
 
 }

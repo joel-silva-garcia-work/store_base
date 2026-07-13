@@ -75,6 +75,7 @@ ProductoService
   async Add(
     @Body(new ValidationPipe({ transform: true })) createDto: CreateProductoDto,
     @Req() request: Request
+    
   ) {
     const clientIp = request.socket.remoteAddress;
     const ipv4 = clientIp?.replace('::ffff:', '');

@@ -7,4 +7,6 @@ export class ReturnDto {
   data?: Object;
   errorCode?: any
   errorMessage?: string;
+  returnMessageCode: any;
+  requestCode: any;
 }

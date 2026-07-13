@@ -1,0 +1,19 @@
+export enum MessageCodes {
+  SUCCESS = 1,
+  ERROR = 2,
+  NOT_FOUND = 3,
+  UNAUTHORIZED = 4,
+  FORBIDDEN = 5,
+  BAD_REQUEST = 6,
+  CONFLICT = 7,
+  UNPROCESSABLE_ENTITY = 8,
+  INTERNAL_SERVER_ERROR = 9,
+  NOT_IMPLEMENTED = 10,
+  BAD_GATEWAY = 11,
+  EXPIRED = 12,
+  INVALID_TOKEN_REFRESH = 13,
+  INVALID_TOKEN_ACCESS = 14,
+  REFRESH_EXPIRED = 15,
+  ACCESS_EXPIRED = 16,
+  // ... otros códigos de mensaje según sea necesario
+} 
