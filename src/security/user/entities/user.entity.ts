@@ -23,7 +23,7 @@ export class User extends BasicInformationEntity {
 
  
   @ManyToOne(() => Rol, {eager:true})
-   rol: Rol;
+   role: Rol;
 
   toRecord(): Record<string, any> {
     return {

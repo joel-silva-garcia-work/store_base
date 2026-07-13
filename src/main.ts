@@ -6,6 +6,7 @@ import { ClearWhiteSpaceInterceptor } from './common/base/interceptors/white-spa
 import { NestExpressApplication } from '@nestjs/platform-express';
 import Debugger from 'debug'
 import { json, urlencoded } from 'body-parser';
+import { JwtGuard } from './security/auth/guard';
 
 
 const debug = Debugger('sigedoc:main')
@@ -36,8 +37,8 @@ async function bootstrap() {
 
   // Swagger
   const options = new DocumentBuilder()
-    .setTitle('SIGEDOC')
-    .setDescription('SIGEDOC API')
+    .setTitle('Tienda')
+    .setDescription('Tienda API')
     .setVersion('1.0')
     .build();
 
@@ -52,6 +53,13 @@ async function bootstrap() {
   app.setGlobalPrefix('v1') 
   app.set('trust proxy', true); // Habilitar trust proxy
   
+
+
+  // Guard global de autenticación (opcional)
+  app.useGlobalGuards(new JwtGuard());
+
+  // Guard global de CSRF (solo para métodos mutantes)
+
   // iniciando puerto 5005 para dejar free el 3000 para frontend
   await app.listen(process.env.API_PORT);
  }

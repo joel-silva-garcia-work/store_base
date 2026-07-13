@@ -29,28 +29,28 @@ export class AuthController {
   constructor(private authSetvice: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
-  @Post('autenticarse')
-  @ApiOperation({ 
-    summary: 'Autentica el usuario',
-    description: 'Autentica el usuario contra LDAP primero, si falla usa autenticación local como fallback'
-  })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Autenticación exitosa',
-    type: AuthResponseDto
-  })
-  @ApiResponse({ 
-    status: 403, 
-    description: 'Credenciales inválidas o usuario ya logueado' 
-  })
-  signin(@Body() dto: AuthDto): Promise<any> {
+  @Post('signup')
+  signup(@Body() dto: CreateUserDto) {
+    return this.authSetvice.signup(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('signup-admin')
+  signupAdmin(@Body() dto: CreateUserDto) {
+    return this.authSetvice.signupAdmin(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('signin')
+  @ApiOperation({ summary: 'Autentica el usuario' })
+  signin(@Body() dto: AuthDto) {
     return this.authSetvice.login(dto);
   }
 
   
   @UseGuards(JwtGuard)
   @HttpCode(HttpStatus.OK)
-  @Post('salir')
+  @Post('log-out')
   @ApiOperation({ summary: 'Cierra sesión' })
   signOut(@GetUser() user: User) {
     const dto = new LoginDto
@@ -58,8 +58,9 @@ export class AuthController {
     return this.authSetvice.logOut(dto);
   }
 
+
   @HttpCode(HttpStatus.OK)
-  @Post('esta-token-expirado')
+  @Post('is-token-expired')
   @ApiOperation({ summary: 'Valida el token' })
   isTokenExpired(@Body() dto: TokenDto) {
     return this.authSetvice.isTokenExpired(dto);
@@ -67,11 +68,12 @@ export class AuthController {
 
   @UseGuards(JwtGuard)
   @HttpCode(HttpStatus.OK)
-  @Post('cierra-sesion')
+  @Post('logged-out')
   @ApiOperation({ summary: 'Cierra sesión' })
   loggedAdmin(
   @Body() dto: LogOutDto,
   @GetUserAdmin() user: User) {
     return this.authSetvice.loggedOut(dto);
   }
+
 }
