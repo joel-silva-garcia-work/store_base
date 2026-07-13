@@ -41,7 +41,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('signin')
+  @Post('login')
   @ApiOperation({ summary: 'Autentica el usuario' })
   signin(@Body() dto: AuthDto) {
     return this.authSetvice.login(dto);

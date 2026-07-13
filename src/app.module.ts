@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { ProductoModule } from './tienda/producto/producto.module';
 import { ConfigurationModule } from './config/configuration/configuration.module';
 import { UserModule } from './security/user/user.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -27,6 +28,7 @@ import { NotificationsModule } from './notify/notifications/notifications.module
     AuthModule,  
     ConfigurationModule,
     NotificationsModule,
+    ProductoModule,
   ],
   controllers: [],
   providers: [],

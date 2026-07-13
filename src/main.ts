@@ -53,11 +53,6 @@ async function bootstrap() {
   app.setGlobalPrefix('v1') 
   app.set('trust proxy', true); // Habilitar trust proxy
   
-
-
-  // Guard global de autenticación (opcional)
-  app.useGlobalGuards(new JwtGuard());
-
   // Guard global de CSRF (solo para métodos mutantes)
 
   // iniciando puerto 5005 para dejar free el 3000 para frontend

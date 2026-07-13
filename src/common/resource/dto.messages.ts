@@ -9,6 +9,9 @@ export const DTO_MESSAGES = {
     FIELD_MUST_BE_BOOLEAN: { key: 'FIELD_MUST_BE_BOOLEAN', message: 'El campo debe ser booleano' },
     FIELD_MUST_BE_NUMBER: { key: 'FIELD_MUST_BE_NUMBER', message: 'El campo debe ser un número' },
     FIELD_MUST_BE_DATE: { key: 'FIELD_MUST_BE_DATE', message: 'El campo debe ser una fecha válida' },
+    FIELD_MIN_VALUE: { key: 'FIELD_MIN_VALUE', message: 'El campo debe ser mayor o igual al valor mínimo definido' },
+    FIELD_MAX_VALUE: { key: 'FIELD_MAX_VALUE', message: 'El campo debe ser menor o igual al valor máximo definido' },
+    FIELD_MUST_BE_OBJECT: { key: 'FIELD_MUST_BE_OBJECT', message: 'El campo debe ser un objeto JSON válido' },
     FIELD_MUST_BE_UUID: { key: 'FIELD_MUST_BE_UUID', message: 'El campo debe ser un UUID válido' },
     FIELD_MUST_BE_EMAIL: { key: 'FIELD_MUST_BE_EMAIL', message: 'El campo debe ser un correo electrónico válido' },
     FIELD_MUST_BE_PHONE: { key: 'FIELD_MUST_BE_PHONE', message: 'El campo debe ser un número de teléfono válido' },
@@ -32,3 +35,27 @@ export const DTO_MESSAGES = {
 
 export type DtoMessageKey = 
   | keyof typeof DTO_MESSAGES.VALIDATION
+
+type DtoMessageLike = { message: string };
+
+export type DtoMessageContextOptions = {
+  includeDtoName?: boolean;
+  prefix?: string;
+};
+
+export function withDtoContext(
+  base: DtoMessageLike,
+  options: DtoMessageContextOptions = {},
+): { message: (args: { property?: string; targetName?: string }) => string } {
+  const { includeDtoName = false, prefix = 'campo' } = options;
+
+  return {
+    message: (args) => {
+      const property = args?.property ?? '';
+      const targetName = args?.targetName ?? '';
+      const dtoPart = includeDtoName && targetName ? ` DTO: ${targetName}` : '';
+      const propPart = property ? `${prefix}: ${property}` : prefix;
+      return `${base.message} ${propPart}${dtoPart}`;
+    },
+  };
+}

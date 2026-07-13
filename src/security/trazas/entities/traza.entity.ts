@@ -15,17 +15,7 @@ export class Traza extends BasicEntity {
   @Column({nullable: true})
   user: string;
 
-  @Column({ type: 'json' })
+  @Column({ type: 'jsonb', nullable: true })
   traza: Record<string, any>; // Campo JSON para almacenar los datos de seguimiento
 
-  toRecord(): Record<string, any> {
-    return {
-      name: '',
-      description: '',
-      ip: this.ip,
-      url: this.url,
-      user: this.user,
-      traza: this.traza
-    };
-  }
 }
