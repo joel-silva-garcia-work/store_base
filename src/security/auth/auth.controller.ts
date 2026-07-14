@@ -46,7 +46,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('sigin')
+  @Post('signin')
   @ApiOperation({ summary: 'Autentica el usuario' })
   signin(@Body() dto: AuthDto) {
     return this.authService.login(dto);
@@ -81,37 +81,40 @@ export class AuthController {
     return this.authService.loggedOut(dto);
   }
 
-   @Post('login')
-  async login(@Body() req):Promise<ReturnDto> {
-    if (!req || Object.keys(req).length === 0) {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.BAD_REQUEST;
-      this.returnDto.returnMessageCode = MessageCodes.BAD_REQUEST;
-      this.returnDto.data = [];
-      return this.returnDto;
-    }
-    const accessPayload = {
-      tokenKind: KindTokenEnum.ACCESS_TOKEN,
-      ...req.customData, // Permite datos personalizados en el payload
-    };
-    const refreshPayload = {
-      tokenKind: KindTokenEnum.REFRESH_TOKEN,
-      ...req.customData, // Permite datos personalizados en el payload
-    };
-    const accessToken = this.authService.generateAccessToken(accessPayload);
-    const refreshToken = this.authService.generateRefreshToken(refreshPayload);
-    this.returnDto.isSuccess = true;
-    this.returnDto.requestCode = CodeEnum.OK;
-    this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
-    this.returnDto.data = {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
-    return this.returnDto;
-  }
+  //  @Post('login')
+  // async login(@Body() req):Promise<ReturnDto> {
+  //   if (!req || Object.keys(req).length === 0) {
+  //     this.returnDto.isSuccess = false;
+  //     this.returnDto.requestCode = CodeEnum.BAD_REQUEST;
+  //     this.returnDto.returnMessageCode = MessageCodes.BAD_REQUEST;
+  //     this.returnDto.data = [];
+  //     return this.returnDto;
+  //   }
+  //   const accessPayload = {
+  //     tokenKind: KindTokenEnum.ACCESS_TOKEN,
+  //     ...req.customData, // Permite datos personalizados en el payload
+  //   };
+  //   const refreshPayload = {
+  //     tokenKind: KindTokenEnum.REFRESH_TOKEN,
+  //     ...req.customData, // Permite datos personalizados en el payload
+  //   };
+  //   const accessToken = this.authService.generateAccessToken(accessPayload);
+  //   const refreshToken = this.authService.generateRefreshToken(refreshPayload);
+  //   this.returnDto.isSuccess = true;
+  //   this.returnDto.requestCode = CodeEnum.OK;
+  //   this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
+  //   this.returnDto.data = {
+  //     access_token: accessToken,
+  //     refresh_token: refreshToken,
+  //   };
+  //   return this.returnDto;
+  // }
 
+  @UseGuards(JwtGuard)
   @Post('refresh')
-  async refresh(@Body() body: { refresh_token: string }):Promise<ReturnDto> {
+  async refresh(@Body() body: { refresh_token: string },
+  @GetUser()user: User
+  ):Promise<ReturnDto> {
     const { refresh_token } = body;
     const result = this.authService.verifyRefreshToken(refresh_token);
 
@@ -137,7 +140,7 @@ export class AuthController {
     return this.returnDto;
   }
 
-    @Post('verify-access-token')
+  @Post('verify-access-token')
   async verifyAccess(@Body() body: { access_token: string; refresh_token: string }):Promise<ReturnDto> {
     this.returnDto.data = [];
     const { access_token, refresh_token } = body;

@@ -10,16 +10,16 @@ import * as argon from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { User } from '../user/entities/user.entity';
-import { AuthDto } from './dto/auth.dto';
 import { TokenDto } from './dto/token.dto';
 import { LogOutDto } from './dto/logOut.dto';
 import { LoginDto } from './dto/login.dto';
 import { Rol } from '../rol/entities/rol.entity';
 import { CreateUserDto } from '../user/dto';
-import * as ldap from 'ldapjs';
 import { ReturnDto } from 'src/common/base/dto/return.dto';
+import { KindTokenEnum } from 'src/common/enum/kind.token.enum';
 import { CodeEnum } from 'src/common/enum/code.enum';
-import { AUTH_MESSAGES } from 'src/common/resource/auth.messages';
+import { MessageCodes } from 'src/common/enum/messageCodes.enum';
+
 
 @Injectable({})
 export class AuthService {
@@ -56,9 +56,8 @@ export class AuthService {
     // otherwise continue
     // check if user is already logged
     const role = await this.roleRepository.findOne({
-      where: { id: '792e024b-f781-4f39-ba6a-2445fc1db712' },
+      where: { id: '4252bf9a-b5f9-4c62-b146-e8977b79431e' },
     });
-
 
     if (user.role.id == role.id) { 
       user.isLogged = false;
@@ -68,23 +67,40 @@ export class AuthService {
     }
 
     if (user.role.id != role.id) {
-      console.log('no es el mismo');
       user.isLogged = true;
     }
 
     await this.userRepository.save(user);
     // return the save user token
 
-    const refresh_token = await this.signToken(user.id, user.username, '1d');
-    return {
-      userID: user.id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      // lastname: user.lastname,
-      // phone: user.phone,
-      refresh_token: refresh_token,
-    };
+        const accessPayload = {
+          tokenKind: KindTokenEnum.ACCESS_TOKEN,
+          userID: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          // req.customData, // Permite datos personalizados en el payload
+        };
+        const refreshPayload = {
+          tokenKind: KindTokenEnum.REFRESH_TOKEN,
+          userID: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          // req.customData, // Permite datos personalizados en el payload
+        };
+    // Aca mezclo
+    const returnDto = new ReturnDto
+     const accessToken = this.generateAccessToken(accessPayload);
+        const refreshToken = this.generateRefreshToken(refreshPayload);
+        returnDto.isSuccess = true;
+        returnDto.requestCode = CodeEnum.OK;
+        returnDto.returnMessageCode = MessageCodes.SUCCESS;
+        returnDto.data = {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        };
+        return returnDto;
   }
 
   async logOut(dto: LoginDto) {
