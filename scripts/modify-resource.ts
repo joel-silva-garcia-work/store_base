@@ -786,12 +786,12 @@ export class ${className}Module {}
 const serviceContent = `import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { BaseServiceCRUD } from './../../../common/base/class/base.service.crud.class';
 import { ${className} } from './entities/${resourceName}.entity';
 import { Create${className}Dto, Update${className}Dto } from './dto';
-import { IdDto } from './../../../common/base/dto/id.dto';
 import { Traza } from '../../security/trazas/entities/traza.entity';
 import { CreateTrazaDto } from '../../security/trazas/dto/create-traza.dto';
+import { IdDto } from 'src/common/base/dto/id.dto';
+import { BaseServiceCRUD } from 'src/common/base/class/base.service.crud.class';
 
 
 @Injectable()
@@ -812,12 +812,12 @@ Update${className}Dto> {
     return entity.toTace();
   }
 
-  override async findAllItems() {
+  async findAllItems() {
     return await super.findAllItems();
   }
 
 
-  override async findActiveItems() {
+  async findActiveItems() {
     return await super.findActiveItems();
   }
 

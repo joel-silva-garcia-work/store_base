@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { CategoriaModule } from './tienda/categoria/categoria.module';
 import { ProductoModule } from './tienda/producto/producto.module';
 import { ConfigurationModule } from './config/configuration/configuration.module';
 import { UserModule } from './security/user/user.module';
@@ -29,6 +30,7 @@ import { NotificationsModule } from './notify/notifications/notifications.module
     ConfigurationModule,
     NotificationsModule,
     ProductoModule,
+    CategoriaModule,
   ],
   controllers: [],
   providers: [],
