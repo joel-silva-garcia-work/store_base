@@ -63,7 +63,6 @@ export class AuthController {
     return this.authService.logOut(dto);
   }
 
-
   @HttpCode(HttpStatus.OK)
   @Post('is-token-expired')
   @ApiOperation({ summary: 'Valida el token' })
@@ -80,35 +79,6 @@ export class AuthController {
   @GetUserAdmin() user: User) {
     return this.authService.loggedOut(dto);
   }
-
-  //  @Post('login')
-  // async login(@Body() req):Promise<ReturnDto> {
-  //   if (!req || Object.keys(req).length === 0) {
-  //     this.returnDto.isSuccess = false;
-  //     this.returnDto.requestCode = CodeEnum.BAD_REQUEST;
-  //     this.returnDto.returnMessageCode = MessageCodes.BAD_REQUEST;
-  //     this.returnDto.data = [];
-  //     return this.returnDto;
-  //   }
-  //   const accessPayload = {
-  //     tokenKind: KindTokenEnum.ACCESS_TOKEN,
-  //     ...req.customData, // Permite datos personalizados en el payload
-  //   };
-  //   const refreshPayload = {
-  //     tokenKind: KindTokenEnum.REFRESH_TOKEN,
-  //     ...req.customData, // Permite datos personalizados en el payload
-  //   };
-  //   const accessToken = this.authService.generateAccessToken(accessPayload);
-  //   const refreshToken = this.authService.generateRefreshToken(refreshPayload);
-  //   this.returnDto.isSuccess = true;
-  //   this.returnDto.requestCode = CodeEnum.OK;
-  //   this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
-  //   this.returnDto.data = {
-  //     access_token: accessToken,
-  //     refresh_token: refreshToken,
-  //   };
-  //   return this.returnDto;
-  // }
 
   @UseGuards(JwtGuard)
   @Post('refresh')

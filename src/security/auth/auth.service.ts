@@ -19,10 +19,11 @@ import { ReturnDto } from 'src/common/base/dto/return.dto';
 import { KindTokenEnum } from 'src/common/enum/kind.token.enum';
 import { CodeEnum } from 'src/common/enum/code.enum';
 import { MessageCodes } from 'src/common/enum/messageCodes.enum';
+import { returnClass } from 'src/common/base/class/returned.class';
 
 
 @Injectable({})
-export class AuthService {
+export class AuthService  extends returnClass{
   private readonly logger = new Logger(AuthService.name);
   private readonly SUPER_ADMIN_NAME = 'Super Admin';
 
@@ -35,7 +36,11 @@ export class AuthService {
     private jwt: JwtService,
     private config: ConfigService,
     private readonly jwtService: JwtService) 
-  {}
+  {
+    super();
+  }
+
+  // Revisado
 
   async login(dto: LoginDto) {
     // find the user by username
@@ -44,14 +49,14 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new ForbiddenException('User Name do not exist');
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'User Name do not exist', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // otherwise continue
     // compare password
     const pwMatch = await argon.verify(user.hash, dto.password);
-    // if password incorrect throw an exception
+    // if password incorrect return an exception
     if (!pwMatch) {
-      throw new ForbiddenException('Password incorrects.');
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'Password incorrects.', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // otherwise continue
     // check if user is already logged
@@ -63,7 +68,7 @@ export class AuthService {
       user.isLogged = false;
     }
     if (user.isLogged) {
-      throw new ForbiddenException('User already logged');
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'User already logged', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
 
     if (user.role.id != role.id) {
@@ -82,28 +87,23 @@ export class AuthService {
         const accessPayload = {
           tokenKind: KindTokenEnum.ACCESS_TOKEN,
           userID: user.id,
-          // req.customData, // Permite datos personalizados en el payload
         };
         const refreshPayload = {
           tokenKind: KindTokenEnum.REFRESH_TOKEN,
           userID: user.id,
-          // req.customData, // Permite datos personalizados en el payload
         };
-    // Aca mezclo
-    const returnDto = new ReturnDto
-     const accessToken = this.generateAccessToken(accessPayload);
-        const refreshToken = this.generateRefreshToken(refreshPayload);
-        returnDto.isSuccess = true;
-        returnDto.requestCode = CodeEnum.OK;
-        returnDto.returnMessageCode = MessageCodes.SUCCESS;
-        returnDto.data = {
-          accessInfo: accessInfo,
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        };
-        return returnDto;
+
+        const accessToken = this.generateAccessToken(accessPayload);
+    const refreshToken = this.generateRefreshToken(refreshPayload);
+    const data = {
+      accessInfo: accessInfo,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
   }
 
+  // Revisado
   async logOut(dto: LoginDto) {
     // find the user by username
     const user = await this.userRepository.findOneBy({
@@ -111,14 +111,20 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new ForbiddenException('User Name do not exist');
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'User Name do not exist', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // otherwise continue
     // poner  is logged false
     user.isLogged = false;
     await this.userRepository.save(user);
-    // return the save user token
-    return true;
+
+    // Aca mezclo
+    const data = {
+      accessInfo: null,
+      access_token: null,
+      refresh_token: null,
+    };
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
   }
 
   async signupAdmin(dto: CreateUserDto) {
@@ -130,8 +136,7 @@ export class AuthService {
     // TODO
     const role = await this.roleRepository.findOne({
       where: {
-        id: '792e024b-f781-4f39-ba6a-2445fc1db712',
-        // id:"dc3ab524-d911-4f8a-93a6-5ab0a524f2bc"
+        id: '4252bf9a-b5f9-4c62-b146-e8977b79431e',
       },
     });
     // search for another user with the same username
@@ -139,7 +144,7 @@ export class AuthService {
       username: dto.username,
     });
     if (userExist) {
-      throw new ConflictException(`The user Name ${dto.username} is taken.`);
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, `The user Name ${dto.username} is taken.`, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // search if exist any admin
     // TODO
@@ -148,7 +153,7 @@ export class AuthService {
         role: role,
       });
       if (userExist) {
-        throw new ConflictException(`There is an admin already.`);
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, `There is an admin already.`, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
       }
     }
 
@@ -167,12 +172,36 @@ export class AuthService {
     });
     user = await this.userRepository.save(user);
     // return the save user token
-    return this.signToken(user.id, user.username, '1m');
+    const accessInfo ={
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          role: user.role.id
+        }
+        const accessPayload = {
+          tokenKind: KindTokenEnum.ACCESS_TOKEN,
+          userID: user.id,
+          // req.customData, // Permite datos personalizados en el payload
+        };
+        const refreshPayload = {
+          tokenKind: KindTokenEnum.REFRESH_TOKEN,
+          userID: user.id,
+          // req.customData, // Permite datos personalizados en el payload
+        };
+    // Aca mezclo
+
+    const accessToken = this.generateAccessToken(accessPayload);
+    const refreshToken = this.generateRefreshToken(refreshPayload);
+    const data = {
+      accessInfo: accessInfo,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
   }
 
   async signup(dto: CreateUserDto) {
     //generate the password hash
-    console.log(dto);
 
     const hash = await argon.hash(dto.password);
 
@@ -186,7 +215,7 @@ export class AuthService {
       username: dto.username,
     });
     if (userExist) {
-      throw new ConflictException(`The user Name ${dto.username} is taken.`);
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, `The user Name ${dto.username} is taken.`, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // otherwise continue
     //save the user in the BD
@@ -206,35 +235,33 @@ export class AuthService {
     //  check if user is already logged
 
     // return the save user token
-    const access_token = this.signToken(user.id, user.username, '1m');
-    const refresh_token = this.signToken(user.id, user.username, '480m');
-    return {
-      rol: user.role.id,
-      name: user.name,
-      email: user.email,
-      username: user.username,
-      access_token: access_token,
-      refresh_token: refresh_token,
+        const accessInfo ={
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          role: user.role.id
+        }
+        const accessPayload = {
+          tokenKind: KindTokenEnum.ACCESS_TOKEN,
+          userID: user.id,
+          // req.customData, // Permite datos personalizados en el payload
+        };
+        const refreshPayload = {
+          tokenKind: KindTokenEnum.REFRESH_TOKEN,
+          userID: user.id,
+          // req.customData, // Permite datos personalizados en el payload
+        };
+
+    const accessToken = this.generateAccessToken(accessPayload);
+    const refreshToken = this.generateRefreshToken(refreshPayload);
+    const data = {
+      accessInfo: accessInfo,
+      access_token: accessToken,
+      refresh_token: refreshToken,
     };
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
   }
 
-  async signToken(
-    userID: string,
-    username: string,
-    time: string,
-  ): Promise<any> {
-    const payload = {
-      sub: userID,
-      username: username,
-    };
-    const secret = this.config.get('JWT_SECRET_KEY');
-
-    const token = await this.jwt.signAsync(payload, {
-      expiresIn: time,
-      secret: secret,
-    });
-    return token;
-  }
 
   async validateToken(token: string): Promise<boolean> {
     try {
@@ -277,7 +304,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new ForbiddenException('User Name do not exist');
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'User Name do not exist', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // otherwise continue
     // poner  is logged false
@@ -290,11 +317,11 @@ export class AuthService {
 
   // other part
    generateAccessToken(customPayload: any) {
-    return this.jwtService.sign(customPayload, { expiresIn: '3m' });
+    return this.jwtService.sign(customPayload, { expiresIn: '1m' });
   }
 
   generateRefreshToken(customPayload: any) {
-    return this.jwtService.sign(customPayload, { expiresIn: '60m' }); // Token de refresh con expiración diferente
+    return this.jwtService.sign(customPayload, { expiresIn: '5m' }); // Token de refresh con expiración diferente
   }
 
     // Método para verificar el token de refresh
