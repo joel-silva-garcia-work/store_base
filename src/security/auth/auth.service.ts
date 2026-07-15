@@ -73,20 +73,20 @@ export class AuthService {
     await this.userRepository.save(user);
     // return the save user token
 
-        const accessPayload = {
-          tokenKind: KindTokenEnum.ACCESS_TOKEN,
-          userID: user.id,
+        const accessInfo ={
           name: user.name,
           username: user.username,
           email: user.email,
+          role: user.role.id
+        }
+        const accessPayload = {
+          tokenKind: KindTokenEnum.ACCESS_TOKEN,
+          userID: user.id,
           // req.customData, // Permite datos personalizados en el payload
         };
         const refreshPayload = {
           tokenKind: KindTokenEnum.REFRESH_TOKEN,
           userID: user.id,
-          name: user.name,
-          username: user.username,
-          email: user.email,
           // req.customData, // Permite datos personalizados en el payload
         };
     // Aca mezclo
@@ -97,6 +97,7 @@ export class AuthService {
         returnDto.requestCode = CodeEnum.OK;
         returnDto.returnMessageCode = MessageCodes.SUCCESS;
         returnDto.data = {
+          accessInfo: accessInfo,
           access_token: accessToken,
           refresh_token: refreshToken,
         };
