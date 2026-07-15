@@ -2,4 +2,9 @@ export enum ResourceEnum {
   ALREADY_EXST = 'already_exist',
   ENTITY_NOT_FOUND = 'entity_not_found',
   ELEMENT_NOT_FOUND = 'element_not_found',
+  Exception = "Exception",
+  SUCCESS = "SUCCESS",
+  UNAUTHORIZED = "UNAUTHORIZED",
+  EXPIRED = "EXPIRED",
+  NOTIFICATION_NOT_FOUND = "NOTIFICATION_NOT_FOUND",
 }

@@ -8,6 +8,8 @@ import { BaseDto } from '../dto/base.crud.dto';
 import { IdDto } from '../dto/id.dto';
 import { MethodEnum } from 'src/common/enum/method.enum';
 import { ResourceEnum } from 'src/common/enum/resource.enum';
+import { returnClass } from './returned.class';
+import { MessageCodes } from 'src/common/enum/messageCodes.enum';
 
 // Interfaz completa del SearchingDto
 
@@ -15,29 +17,27 @@ export class BaseServiceCRUD<
   TEntity,
   createDto extends BaseDto,
   updateDto extends BaseDto,
-> {
+>  extends returnClass{
   private dto: CrudDto;
   private returnDto: ReturnDto;
   private valid: boolean;
   private queryBuilder: SelectQueryBuilder<TEntity>;
 
   constructor(repo: Repository<TEntity>) {
+    super();
     this.dto = new CrudDto();
     this.dto.repo = repo;
-    this.returnDto = new ReturnDto();
   }
 
   async findAllItems(): Promise<ReturnDto> {
-    const returnDto = new ReturnDto();
-    returnDto.data = await this.dto.repo.find({});
-    return returnDto;
+    const data = await this.dto.repo.find({});
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
   }
   async findActiveItems(): Promise<ReturnDto> {
-    const returnDto = new ReturnDto();
-    returnDto.data = await this.dto.repo.find({
+    const data = await this.dto.repo.find({
       where: { isActive: true },
     });
-    return returnDto;
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
   }
 
   async create(createDto: createDto): Promise<ReturnDto> {
@@ -48,20 +48,15 @@ export class BaseServiceCRUD<
     }
     if (this.valid) {
       try {
-        this.returnDto.data = await this.dto.repo.save(createDto);
+        const data = await this.dto.repo.save(createDto);
+        return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
       } catch (error) {
-        this.returnDto.isSuccess = false;
-        this.returnDto.errorCode = error.code
-        this.returnDto.returnCode = CodeEnum.BAD_REQUEST;
-        this.returnDto.errorMessage = error.message ;
+        return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST, MessageCodes.ERROR.toString(), MessageCodes.ERROR, CodeEnum.BAD_REQUEST);
+
       }
     } else {
-      this.returnDto.isSuccess = false;
-      this.returnDto.errorCode = CodeEnum.BAD_REQUEST
-      this.returnDto.returnCode = CodeEnum.BAD_REQUEST;
-      this.returnDto.errorMessage =  ResourceEnum.ALREADY_EXST ;
+      return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST,ResourceEnum.ALREADY_EXST, MessageCodes.ERROR, CodeEnum.BAD_REQUEST);
     }
-    return this.returnDto;
   }
   async update(updateDto: updateDto): Promise<ReturnDto> {
     this.dto.id = updateDto.id;
@@ -78,23 +73,17 @@ export class BaseServiceCRUD<
           },
         });
         if (!object) {
-          this.returnDto.isSuccess = false;
-          this.returnDto.returnCode = CodeEnum.BAD_REQUEST;
-          // traducir
+          return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST, 'the Item with id ${this.dto.id} do not exist', MessageCodes.ERROR, CodeEnum.BAD_REQUEST);
         } else {
-          this.returnDto.data = await this.dto.repo.save(updateDto);
+          const data = await this.dto.repo.save(updateDto);
+          return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
         }
       } catch (error) {
-        this.returnDto.isSuccess = false;
-        this.returnDto.errorMessage = error.message ;
-        this.returnDto.returnCode = error.code;
+        return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST, ResourceEnum.Exception, MessageCodes.ERROR, CodeEnum.BAD_REQUEST);
       }
     } else {
-      this.returnDto.isSuccess = false;
-      this.returnDto.returnCode = CodeEnum.BAD_REQUEST;
-      this.returnDto.errorMessage = ResourceEnum.ALREADY_EXST ;
+      return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST, ResourceEnum.ALREADY_EXST, MessageCodes.ERROR, CodeEnum.BAD_REQUEST);
     }
-    return this.returnDto;
   }
 
   async remove(IdDto: IdDto): Promise<ReturnDto> {
@@ -105,15 +94,12 @@ export class BaseServiceCRUD<
       },
     });
     if (!item) {
-      this.returnDto.isSuccess = false;
-      // traducir
-      this.returnDto.returnCode = CodeEnum.BAD_REQUEST;
-      this.returnDto.errorMessage =  `the Item with id ${this.dto.id} do not exist`
+      return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST, 'the Item with id ${this.dto.id} do not exist', MessageCodes.ERROR, CodeEnum.BAD_REQUEST);
     } 
     else {
-      this.returnDto.data = await this.dto.repo.softDelete(this.dto.id);
+      const data = await this.dto.repo.softDelete(this.dto.id);
+      return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
     }
-    return this.returnDto;
   }
 
   async findOne(dto: IdDto):Promise<ReturnDto> {
@@ -123,14 +109,11 @@ export class BaseServiceCRUD<
       },
     });
     if (!item) {
-      this.returnDto.isSuccess = false;
-      // traducir
-      this.returnDto.returnCode = CodeEnum.BAD_REQUEST;
+      return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST, 'the Item with id ${this.dto.id} do not exist', MessageCodes.ERROR, CodeEnum.BAD_REQUEST);
     } else {
-      this.returnDto.isSuccess = true
-      this.returnDto.data = [item];
+      const data = [item];
+      return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
     }
-    return this.returnDto
   }
   async findOneActive(dto: IdDto):Promise<ReturnDto> {
     const item = await this.dto.repo.findOne({
@@ -140,14 +123,11 @@ export class BaseServiceCRUD<
       },
     });
     if (!item) {
-      this.returnDto.isSuccess = false;
-      // traducir
-      this.returnDto.returnCode = CodeEnum.BAD_REQUEST;
+      return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST, 'the Item with id ${this.dto.id} do not exist', MessageCodes.ERROR, CodeEnum.BAD_REQUEST);
     } else {
-      this.returnDto.isSuccess = true
-      this.returnDto.data = [item];
+      const data = [item];
+      return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
     }
-    return this.returnDto
   }
 
   async _validate(dto: BaseDto): Promise<boolean> {
@@ -177,10 +157,6 @@ export class BaseServiceCRUD<
   }
   async active(dto: IdDto): Promise<ReturnDto> {
     this.dto.id = dto.id;
-    this.returnDto = new ReturnDto
-    this.returnDto.isSuccess = false
-    this.returnDto.returnCode = CodeEnum.BAD_REQUEST
-    this.returnDto.errorCode = CodeEnum.NOT_FOUND
     const item = await this.dto.repo.findOne({      
       where: {
         id: this.dto.id,
@@ -189,11 +165,11 @@ export class BaseServiceCRUD<
     if (item && item.id == this.dto.id) 
      {
       item.isActive = !item.isActive;
-      this.returnDto.isSuccess = true
-      this.returnDto.returnCode = null
-      this.returnDto.errorCode = null     
-      this.returnDto.data = await this.dto.repo.save(item);
+      const data = await this.dto.repo.save(item);
+      return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
     }
-    return this.returnDto;
+    else {
+      return this.getReturn(false, CodeEnum.BAD_REQUEST, null, CodeEnum.BAD_REQUEST, 'the Item with id ${this.dto.id} do not exist', MessageCodes.NOT_FOUND, CodeEnum.BAD_REQUEST);
+    }
   }
 }

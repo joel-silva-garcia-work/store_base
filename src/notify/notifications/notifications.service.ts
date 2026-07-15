@@ -8,6 +8,8 @@ import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { ReturnDto } from 'src/common/base/dto';
 import { CodeEnum } from 'src/common/enum/code.enum';
 import { UpdateStateNotificationDto } from './dto/update-read-notification.dto';
+import { MessageCodes } from 'src/common/enum/messageCodes.enum';
+import { ResourceEnum } from 'src/common/enum/resource.enum';
 
 @Injectable()
 export class NotificationsService extends BaseServiceCRUD<
@@ -22,16 +24,12 @@ export class NotificationsService extends BaseServiceCRUD<
     super(repository);
   }
   async updateReadStatus(dto: UpdateStateNotificationDto): Promise<ReturnDto> {
-    const returnDto = new ReturnDto();
-    const notification = await this.repository.findOne({
+     const notification = await this.repository.findOne({
       where: { id: dto.notificationId },
     });
 
     if (!notification) {
-      returnDto.isSuccess = false;
-      returnDto.errorMessage = 'Notification not found';
-      returnDto.returnCode = CodeEnum.NOT_FOUND;
-      return returnDto;
+      return this.getReturn(false, CodeEnum.NOT_FOUND, null, CodeEnum.NOT_FOUND, ResourceEnum.NOTIFICATION_NOT_FOUND, MessageCodes.NOTIFICATION_NOT_FOUND, CodeEnum.NOT_FOUND);
     }
 
     const destination = notification.destinyUser.find(
@@ -39,20 +37,15 @@ export class NotificationsService extends BaseServiceCRUD<
     );
 
     if (!destination) {
-      returnDto.isSuccess = false;
-      returnDto.errorMessage = 'Destination not found in notification';
-      returnDto.returnCode = CodeEnum.NOT_FOUND;
-      return returnDto;
+      return this.getReturn(false, CodeEnum.NOT_FOUND, null, CodeEnum.NOT_FOUND, ResourceEnum.NOTIFICATION_NOT_FOUND, MessageCodes.NOTIFICATION_NOT_FOUND, CodeEnum.NOT_FOUND);
     }
-
+    
     destination.isReaded = dto.isReaded;
-    returnDto.data = this.repository.save(notification);
-    return returnDto;
+    const data = await this.repository.save(notification);
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
   }
   async GetAll(): Promise<ReturnDto> {
-    const returnDto = new ReturnDto();
-    const notification = await this.repository.find({});
-    returnDto.data = notification;
-    return returnDto;
+    const data = await this.repository.find({});
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
   }
 }

@@ -21,16 +21,17 @@ import { User } from '../user/entities/user.entity';
 import { ReturnDto } from 'src/common/base/dto';
 import { CodeEnum } from 'src/common/enum/code.enum';
 import { MessageCodes } from 'src/common/enum/messageCodes.enum';
-import { KindTokenEnum } from 'src/common/enum/kind.token.enum';
+import { returnClass } from 'src/common/base/class/returned.class';
+import { ResourceEnum } from 'src/common/enum/resource.enum';
 
 
 @ApiTags('Authentication')
 @Controller('autenticacion')
-export class AuthController {
-  private returnDto: ReturnDto;
+export class AuthController extends returnClass{
+  returnDto: any;
 
   constructor(private authService: AuthService) {
-      this.returnDto = new ReturnDto();
+      super();
   }
 
   @HttpCode(HttpStatus.OK)
@@ -181,22 +182,11 @@ export class AuthController {
     const result = this.authService.verifyAccessToken(body.access_token);
 
     if (result.valid) {
-      this.returnDto.isSuccess = true;
-      this.returnDto.requestCode = CodeEnum.OK;
-      this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
-      this.returnDto.data = result.decoded;
-
+      return this.getReturn(true, CodeEnum.OK, result.decoded, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
     } else if (result.expired) {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-      this.returnDto.returnMessageCode = MessageCodes.EXPIRED;
-
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED);
     } else {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-      this.returnDto.returnMessageCode = MessageCodes.UNAUTHORIZED;
-
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED);
     }
-    return this.returnDto;
   }
 }

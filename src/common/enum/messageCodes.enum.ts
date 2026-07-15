@@ -15,5 +15,6 @@ export enum MessageCodes {
   INVALID_TOKEN_ACCESS = 14,
   REFRESH_EXPIRED = 15,
   ACCESS_EXPIRED = 16,
+  NOTIFICATION_NOT_FOUND,
   // ... otros códigos de mensaje según sea necesario
 } 
