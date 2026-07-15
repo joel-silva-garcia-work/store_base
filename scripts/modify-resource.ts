@@ -879,7 +879,7 @@ import { CreateTrazaDto } from 'src/security/trazas/dto/create-traza.dto';
 import { Request } from 'express';
 import { JwtGuard } from 'src/security/auth/guard';
 import { RouteAccessGuard } from 'src/common/guards/route-access.guard';
-import { ReturnDto } from 'src/common/dto/return.dto';
+import { ReturnDto } from 'src/common/base/dto';
 import { BaseControllerCRUD } from 'src/common/base/class/base.controller.crud.class';
 
 @ApiTags('${resourceName}')
