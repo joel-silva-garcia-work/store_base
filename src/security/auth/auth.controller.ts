@@ -28,8 +28,6 @@ import { ResourceEnum } from 'src/common/enum/resource.enum';
 @ApiTags('Authentication')
 @Controller('autenticacion')
 export class AuthController extends returnClass{
-  returnDto: any;
-
   constructor(private authService: AuthService) {
       super();
   }
@@ -92,66 +90,41 @@ export class AuthController extends returnClass{
     if (result.valid) {
       const { iat, exp, ...decodedWithoutIatExp } = result.decoded; // Eliminar iat y exp      
       const newAccessToken = this.authService.generateAccessToken(decodedWithoutIatExp);
-      this.returnDto.isSuccess = true;
-      this.returnDto.requestCode = CodeEnum.OK;
-      this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
-      this.returnDto.data = {
+      const data = {
         access_token: newAccessToken,
       };
+      return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
     } else if (result.expired) {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-      this.returnDto.returnMessageCode = MessageCodes.EXPIRED;
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED);
     } else {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-      this.returnDto.returnMessageCode = MessageCodes.INVALID_TOKEN_REFRESH;
-
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED);
     }
-    return this.returnDto;
   }
 
   @Post('verify-access-token')
   async verifyAccess(@Body() body: { access_token: string; refresh_token: string }):Promise<ReturnDto> {
-    this.returnDto.data = [];
     const { access_token, refresh_token } = body;
-
     // Primero verificamos el token de refresh
     const refreshResult = this.authService.verifyRefreshToken(refresh_token);
-
+    console.log(refreshResult)
     if (!refreshResult.valid) {
       if (refreshResult.expired) {
-        this.returnDto.isSuccess = false;
-        this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-        this.returnDto.returnMessageCode = MessageCodes.REFRESH_EXPIRED;
+        return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED)
       } else {
-        this.returnDto.isSuccess = false;
-        this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-        this.returnDto.returnMessageCode = MessageCodes.INVALID_TOKEN_REFRESH;
+        return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED)
       }
-      return this.returnDto;
     }
 
     // Si el refresh token es válido, verificamos el access token
     const accessResult = this.authService.verifyAccessToken(access_token);
 
     if (accessResult.valid) {
-      this.returnDto.isSuccess = true;
-      this.returnDto.requestCode = CodeEnum.OK;
-      this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
+      return this.getReturn(true, CodeEnum.OK, null, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK)
     } else if (accessResult.expired) {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-      this.returnDto.returnMessageCode = MessageCodes.ACCESS_EXPIRED; 
-      return this.returnDto;
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED)
     } else {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-      this.returnDto.returnMessageCode = MessageCodes.INVALID_TOKEN_ACCESS;
-      return this.returnDto;
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED)
     }
-    return this.returnDto;
-
   }
 
   @Post('verify-refresh')
@@ -159,22 +132,12 @@ export class AuthController extends returnClass{
     const result = this.authService.verifyRefreshToken(body.refresh_token);
 
     if (result.valid) {
-      this.returnDto.isSuccess = true;
-      this.returnDto.requestCode = CodeEnum.OK;
-      this.returnDto.returnMessageCode = MessageCodes.SUCCESS;
-      this.returnDto.data = [];
-
+      return this.getReturn(true, CodeEnum.OK, null, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK)
     } else if (result.expired) {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-      this.returnDto.returnMessageCode = MessageCodes.EXPIRED;
-
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED)
     } else {
-      this.returnDto.isSuccess = false;
-      this.returnDto.requestCode = CodeEnum.UNAUTHORIZED;
-      this.returnDto.returnMessageCode = MessageCodes.UNAUTHORIZED;
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED)
     }
-    return this.returnDto;
   }
 
   @Post('payload')

@@ -326,7 +326,10 @@ export class AuthService  extends returnClass{
 
     // Método para verificar el token de refresh
   verifyRefreshToken(refreshToken: string) {
+    console.log(refreshToken)
     const { valid, decoded } = this.verifyToken(refreshToken);
+    console.log(valid)
+    console.log(decoded) 
     if (valid) {
       const tokenKind = decoded.tokenKind;
       if (tokenKind === 'refresh_token') {
@@ -341,6 +344,7 @@ export class AuthService  extends returnClass{
   private verifyToken(token: string) {
     try {
       const decoded = this.jwtService.verify(token);
+      console.log(decoded)
       return { valid: true, decoded };
     } catch (error) {
       return { valid: false, expired: false }; // Token inválido
