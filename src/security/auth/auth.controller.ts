@@ -127,10 +127,26 @@ export class AuthController extends returnClass{
     const accessResult = this.authService.verifyAccessToken(access_token);
 
     if (accessResult.valid) {
-      return this.getReturn(true, CodeEnum.OK, null, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK)
-    } else if (accessResult.expired) {
-      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED)
-    } else {
+      const result = this.authService.verifyRefreshToken(refresh_token);
+        const { iat, exp, ...decodedWithoutIatExp } = result.decoded; // Eliminar iat y exp      
+        const newAccessToken = this.authService.generateAccessToken(decodedWithoutIatExp);
+        this.authService.generateRefreshToken(decodedWithoutIatExp);
+        const data = {
+        access_token: newAccessToken,
+        refresh_token: refresh_token,
+        };
+        return this.getReturn(true, CodeEnum.UNAUTHORIZED, data, CodeEnum.CREATED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.CREATED)
+      } else if (accessResult.expired) {
+      const result = this.authService.verifyRefreshToken(refresh_token);
+        const { iat, exp, ...decodedWithoutIatExp } = result.decoded; // Eliminar iat y exp      
+        const newAccessToken = this.authService.generateAccessToken(decodedWithoutIatExp);
+        this.authService.generateRefreshToken(decodedWithoutIatExp);
+        const data = {
+        access_token: newAccessToken,
+        refresh_token: refresh_token,
+        };
+        return this.getReturn(true, CodeEnum.UNAUTHORIZED, data, CodeEnum.CREATED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.CREATED)
+      } else {
       return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED)
     }
   }
