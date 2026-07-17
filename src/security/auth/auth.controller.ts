@@ -156,11 +156,31 @@ export class AuthController extends returnClass{
     const result = this.authService.verifyRefreshToken(body.refresh_token);
 
     if (result.valid) {
-      return this.getReturn(true, CodeEnum.OK, null, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK)
-    } else if (result.expired) {
-      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED)
-    } else {
-      return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED)
+        const result = this.authService.verifyRefreshToken(body.refresh_token);
+        const { iat, exp, ...decodedWithoutIatExp } = result.decoded; // Eliminar iat y exp      
+        const newAccessToken = this.authService.generateAccessToken(decodedWithoutIatExp);
+        const newRefreshToken =  this.authService.generateRefreshToken(decodedWithoutIatExp);
+        const data = {
+        access_token: newAccessToken,
+        refresh_token: newRefreshToken,
+        };
+        return this.getReturn(true, CodeEnum.CREATED, data, CodeEnum.CREATED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.CREATED)
+          } else if (result.expired) {
+      const result = this.authService.verifyRefreshToken(body.refresh_token);
+        const { iat, exp, ...decodedWithoutIatExp } = result.decoded; // Eliminar iat y exp      
+        const newAccessToken = this.authService.generateAccessToken(decodedWithoutIatExp);
+        const newRefreshToken =  this.authService.generateRefreshToken(decodedWithoutIatExp);
+        const data = {
+        access_token: newAccessToken,
+        refresh_token: newRefreshToken,
+        };
+        return this.getReturn(true, CodeEnum.CREATED, data, CodeEnum.CREATED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.CREATED)
+      } else {
+         const data = {
+        access_token: null,
+        refresh_token: null,
+        };
+      return this.getReturn(false, CodeEnum.UNAUTHORIZED, data, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED)
     }
   }
 
