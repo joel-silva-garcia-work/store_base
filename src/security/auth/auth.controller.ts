@@ -101,15 +101,23 @@ export class AuthController extends returnClass{
     }
   }
 
-  @Post('verify-access-token')
+  @Get('verify-access-token')
   async verifyAccess(@Body() body: { access_token: string; refresh_token: string }):Promise<ReturnDto> {
     const { access_token, refresh_token } = body;
     // Primero verificamos el token de refresh
     const refreshResult = this.authService.verifyRefreshToken(refresh_token);
-    console.log(refreshResult)
     if (!refreshResult.valid) {
       if (refreshResult.expired) {
-        return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED)
+      
+        const result = this.authService.verifyRefreshToken(refresh_token);
+        const { iat, exp, ...decodedWithoutIatExp } = result.decoded; // Eliminar iat y exp      
+        const newAccessToken = this.authService.generateAccessToken(decodedWithoutIatExp);
+        this.authService.generateRefreshToken(decodedWithoutIatExp);
+        const data = {
+        access_token: newAccessToken,
+        refresh_token: refresh_token,
+        };
+        return this.getReturn(false, CodeEnum.UNAUTHORIZED, data, CodeEnum.UNAUTHORIZED, ResourceEnum.EXPIRED, MessageCodes.EXPIRED, CodeEnum.UNAUTHORIZED)
       } else {
         return this.getReturn(false, CodeEnum.UNAUTHORIZED, null, CodeEnum.UNAUTHORIZED, ResourceEnum.UNAUTHORIZED, MessageCodes.UNAUTHORIZED, CodeEnum.UNAUTHORIZED)
       }
