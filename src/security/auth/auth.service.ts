@@ -15,11 +15,13 @@ import { LogOutDto } from './dto/logOut.dto';
 import { LoginDto } from './dto/login.dto';
 import { Rol } from '../rol/entities/rol.entity';
 import { CreateUserDto } from '../user/dto';
-import { ReturnDto } from 'src/common/base/dto/return.dto';
 import { KindTokenEnum } from 'src/common/enum/kind.token.enum';
 import { CodeEnum } from 'src/common/enum/code.enum';
 import { MessageCodes } from 'src/common/enum/messageCodes.enum';
 import { returnClass } from 'src/common/base/class/returned.class';
+import { Blocked } from '../blocked/entities/blocked.entity';
+import { AccessTypeEnum } from 'src/common/enum/access.type.enum';
+import { ResourceEnum } from 'src/common/enum/resource.enum';
 
 
 @Injectable({})
@@ -33,6 +35,10 @@ export class AuthService  extends returnClass{
 
     @InjectRepository(Rol)
     private roleRepository: Repository<Rol>,
+
+    @InjectRepository(Blocked)
+    private blockRepository: Repository<Blocked>,
+
     private jwt: JwtService,
     private config: ConfigService,
     private readonly jwtService: JwtService) 
@@ -51,12 +57,22 @@ export class AuthService  extends returnClass{
     if (!user) {
       return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'User Name do not exist', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
+    // ask if user is blocked
+    const userBlock = this.blockRepository.findOne({
+      where:{
+        identifier: user.id,
+        accessType: AccessTypeEnum.USERNAME
+      }
+    })
+    if(userBlock){
+      return this.getReturn(false, CodeEnum.BLOCKED, null, CodeEnum.BLOCKED, ResourceEnum.BLOCKED, MessageCodes.BLOCKED, CodeEnum.FORBIDDEN);
+    }
     // otherwise continue
     // compare password
     const pwMatch = await argon.verify(user.hash, dto.password);
     // if password incorrect return an exception
     if (!pwMatch) {
-      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'Password incorrects.', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, ResourceEnum.PASSWORD_INCORRECT, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // otherwise continue
     // check if user is already logged
@@ -68,7 +84,7 @@ export class AuthService  extends returnClass{
       user.isLogged = false;
     }
     if (user.isLogged) {
-      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'User already logged', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, ResourceEnum.USER_AREADY_LOGGED, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
 
     if (user.role.id != role.id) {
@@ -100,7 +116,7 @@ export class AuthService  extends returnClass{
       access_token: accessToken,
       refresh_token: refreshToken,
     };
-    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
   }
 
   // Revisado
@@ -111,7 +127,7 @@ export class AuthService  extends returnClass{
     });
 
     if (!user) {
-      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'User Name do not exist', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, ResourceEnum.USER_DOES_NOT_EXIST, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // otherwise continue
     // poner  is logged false
@@ -124,7 +140,7 @@ export class AuthService  extends returnClass{
       access_token: null,
       refresh_token: null,
     };
-    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, 'Success', MessageCodes.SUCCESS, CodeEnum.OK);
+    return this.getReturn(true, CodeEnum.OK, data, CodeEnum.OK, ResourceEnum.SUCCESS, MessageCodes.SUCCESS, CodeEnum.OK);
   }
 
   async signupAdmin(dto: CreateUserDto) {
@@ -153,7 +169,7 @@ export class AuthService  extends returnClass{
         role: role,
       });
       if (userExist) {
-      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, `There is an admin already.`, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, ResourceEnum.FIRST_ADMIN_EXIST, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
       }
     }
 
@@ -304,7 +320,7 @@ export class AuthService  extends returnClass{
     });
 
     if (!user) {
-      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, 'User Name do not exist', MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
+      return this.getReturn(false, CodeEnum.FORBIDDEN, null, CodeEnum.FORBIDDEN, ResourceEnum.USER_DOES_NOT_EXIST, MessageCodes.NOT_FOUND, CodeEnum.FORBIDDEN);
     }
     // otherwise continue
     // poner  is logged false
@@ -326,10 +342,7 @@ export class AuthService  extends returnClass{
 
     // Método para verificar el token de refresh
   verifyRefreshToken(refreshToken: string) {
-    console.log(refreshToken)
     const { valid, decoded } = this.verifyToken(refreshToken);
-    console.log(valid)
-    console.log(decoded) 
     if (valid) {
       const tokenKind = decoded.tokenKind;
       if (tokenKind === 'refresh_token') {

@@ -6,13 +6,14 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategy';
 import { User } from '../user/entities/user.entity';
 import { Rol } from '../rol/entities/rol.entity';
+import { Blocked } from '../blocked/entities/blocked.entity';
 
 
 @Module({
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
   imports: [
-    TypeOrmModule.forFeature([User, Rol]),
+    TypeOrmModule.forFeature([User, Rol, Blocked]),
     JwtModule.register({
       secret: process.env.JWT_SECRET_KEY,
     }),
