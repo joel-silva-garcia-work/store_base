@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
+import { BlockedModule } from './security/blocked/blocked.module';
 import { CategoriaModule } from './tienda/categoria/categoria.module';
 import { ProductoModule } from './tienda/producto/producto.module';
 import { ConfigurationModule } from './config/configuration/configuration.module';
@@ -31,6 +32,7 @@ import { NotificationsModule } from './notify/notifications/notifications.module
     NotificationsModule,
     ProductoModule,
     CategoriaModule,
+    BlockedModule,
   ],
   controllers: [],
   providers: [],

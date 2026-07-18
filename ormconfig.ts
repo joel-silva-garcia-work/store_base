@@ -4,6 +4,7 @@ import { Rol } from 'src/security/rol/entities/rol.entity';
 import { Traza } from 'src/security/trazas/entities/traza.entity';
 
 //import
+import { Blocked } from 'src/security/blocked/entities/blocked.entity';
 import { Categoria } from 'src/tienda/categoria/entities/categoria.entity';
 import { Producto } from 'src/tienda/producto/entities/producto.entity';
 import { Configuration } from './src/config/configuration/entities/configuration.entity';
@@ -27,6 +28,7 @@ export const config: TypeOrmModuleOptions = {
 
 
     //////------- New tables
+    Blocked,
     Categoria,
     Producto,
     Configuration,
