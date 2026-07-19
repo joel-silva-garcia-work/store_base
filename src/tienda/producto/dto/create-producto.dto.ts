@@ -1,9 +1,13 @@
-import { IsNotEmpty, IsString, IsNumber, IsBoolean, IsDate, IsOptional, IsObject, IsArray, Min, Max, MinLength, MaxLength, ArrayMinSize, ArrayMaxSize } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, IsNumber, IsBoolean, IsDate, IsOptional, IsObject, IsArray, Min, Max, MinLength, MaxLength, ArrayMinSize, ArrayMaxSize, IsInt } from 'class-validator';
 import { BaseExtendedDto } from './../../../common/base/dto/base.dto';
 import { DTO_MESSAGES, withDtoContext } from './../../../common/resource/dto.messages';
 
 export class CreateProductoDto extends BaseExtendedDto {
+
+
+  @IsInt()
+  @IsOptional()
+  idproducto?: number;
 
   @IsOptional()
   codigo?: string;

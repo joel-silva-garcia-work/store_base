@@ -7,6 +7,11 @@ export class Producto extends BasicInformationEntity {
   @Column()
   photo: string;
 
+  @Column({
+    type: 'int'
+  })
+  idproducto: number;
+
   @Column()
   codigo: string;
 
